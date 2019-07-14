@@ -1,0 +1,185 @@
+Design Document
+CMPS 160 Final Project
+Yuval Shabtai
+6/6/2019
+
+============
+Overview
+============
+I wanted to make a tiny world, which the user can affect.
+The world is composed of three elements (so far):
+The sky
+The world
+A small campfire
+Trees
+
+Unfortunately, most of these features got cut out.
+There is only a world, with a small moon orbiting it.
+The reason for most features being cut is the addition
+of shadows.
+
+Instead, I made a very minimalist planet-like interaction.
+There is a small world, and a moon rotating around it.
+Off screen there is a sun.
+
+The moon casts a shadow on the world as it passes by
+in each orbit.
+
+======================
+Interactive objects
+======================
+1. The light source
+The light source's color can be changed with the slider below.
+
+2. The moon
+The speed of the moon can be changed with the slider below.
+
+3. The moon's shape
+The moon can be turned into a cube, or revert to a sphere.
+
+=====================
+Advanced Features
+=====================
+I am a team of one.
+I implemented two advanced features (though maybe it counts for more?):
+
+1. Shadows
+I used shadow mapping. Shadow mapping is a technique in which the
+scene gets rendered from the light's point of view onto a texture.
+Each pixel in the texture represents the depth of the fragment.
+The depth means: the shortest distance from the light source to
+this fragment.
+
+The idea is that when we render other fragments during our normal
+rendering pass, we can find their depth with respect to the light
+source. If their depth is greater than what the light source render
+pass had on the texture, then the fragment is obscured, and the light
+is not applied.
+
+This is a high level description, as the nitty gritty details are
+not conceptually strictly graphics related.
+
+2. Color picking
+There is no need for an elaborate explanation for this one.
+I pass on the color of the light source in a uniform every
+render cycle, so it's simple to change.
+
+2.5. PERFORMANCE!!!
+I re-wrote the base code to increase performance. By a lot.
+Some things I did (it will take too long to explain it all):
+Instead of each object having its own vertex buffer, the scene as a whole
+has only one. I used a simple algorithm to construct the total buffer:
+
+for each shader:
+    for each geometry g in the shader:
+        totalBuffer.append(g.vertices);
+
+I also notices that each shader had a constant attribute stride, so I
+generalized the logic to apply them to the vertex buffer:
+
+renderShader(shader):
+    ...
+    offset = 0
+    for attribute a in shader:
+        gl.attribPointer(a, stride=shader.stride, offset=offset)
+        offset += a.size
+
+I also generalized the logic for lights, so that the shaders can handle
+multiple. I have a lights object with the following structure:
+
+lights object structure:
+this.lights = {
+    ambient: {
+        "color": [x, y, z, w]
+    },
+    directional: [
+        {
+            "direction": [x, y, z, w],
+            "color": [r, g, b, a],
+            "brightness": 1.0
+        }
+    ],
+    point: [
+        {
+            "position": [x, y, z, w],
+            "color": [r, g, b, a],
+            "brightness": 1.0
+        }
+    ],
+    directionalBuffer: {
+        "direction": [x, y, z, w, x, y, z, w, ...],
+        "color": [r, g, b, a, r, g, b, a, ...],
+        "brightness": [1, 0.5, ...]
+    }
+    pointBuffer: {
+        "position": [x, y, z, w, x, y, z, w, ...],
+        "color": [r, g, b, a, r, g, b, a, ...],
+        "brightness": [1, 0.5, ...]
+    }
+}
+
+Instead of using the given initShaders() function, I compile each shader program
+before doing anything else, and keep it in "shader objects". Shader objects are
+complicated entities, which contain all the information about a specific shader,
+as well as the geometries rendered using this shader.
+
+All shader objects are contained in a monolithic "shader table":
+
+Shader table structure:
+{
+    "color": {
+        program: <WebGLProgramObject>,
+        attributes: [
+            {
+                "location": <WebGLAttribLication>,
+                "name": "a_position",
+                "size": 12 (in bytes)
+            }
+            .
+            .
+            .
+        ],
+        uniforms: {
+            "u_viewMatrix": <WebGLUniformLocation>,
+            .
+            .
+            .
+        },
+        name: the name of the shader. In this case "color"
+        geometries: an array of geometries
+        vCount: how many vertices in all geometries
+        vBuffer: not a real buffer, just a list of numbers that is the interleaved vertices
+        attributeStride: the attribute stride for this shader
+    },
+    .
+    .
+    .
+    shaderList: An array of all the shaders in a list (so I can quickly iterate through them)
+}
+
+All in all, I do a lot of housekeeping and data management, and I haven't even
+gone into how I swap textures at runtime. Trust me that I spent a lot of time
+on this, and the performance gain is pretty great due to:
+1. No swapping of vertex buffers
+2. Only changing uniforms for each frame
+3. Shaders render in a specific order, so they don't need to be changed around
+4. Linked shader programs are not being recompiled every render pass
+
+Adding geometries is now simpler: renderer.addGeometry(shaderName, geometry)
+Adding lights is also simpler
+Adding texture asynchronously is simpler
+
+I spent most of my time building a framework for my project.
+
+===================
+How to Interact
+===================
+Move the sliders around, and check the checkbox.
+
+===================
+Notes
+===================
+Implementing shadows took more time than expected. This is mostly due to having too many
+classes (22 credits, including CMPS 117).
+In retrospect, I'd break up the organization of the code differently ("refactor" if you will).
+I would also be less ambitious, and would stick to featues that are easier to implement.

@@ -1,0 +1,38 @@
+<html>
+    <head>
+    </head>
+
+    <body onload="main()" style="display: flex; justify-content: center; flex-direction: column; align-items: center;">
+        <div id="main-container" style="display: flex; flex-direction: column; align-items: center;">
+            <canvas id="gl" width="400px" height="400px" style="width: 400px; height: 400px"></canvas>
+        </div>
+        
+        <div style="text-align: center; display: flex; flex-direction: column; margin-top: 20px; width: 33vw; font-family: 'Courier New', Courier, monospace;">
+            <span>Red:   <input type="range" id="red-color" onchange="changeColor()" min="0" max="255"></input></span>
+            <span>Green: <input type="range" id="green-color" onchange="changeColor()" min="0" max="255"></input></span>
+            <span>Blue:  <input type="range" id="blue-color" onchange="changeColor()" min="0" max="255"></input></span>
+            <div></div>
+            <span>Speed: <input type="range" id="speed" onchange="changeSpeed()" min="0" max="1000" value="100"></input></span>
+            <span>Cube Moon: <input type="checkbox" id="moon" onchange="toggleMoon()"></input></span>
+        </div>
+
+        <a href="docs.txt">Docs</a>
+        <img src="final project.jpg" width="400px"/>
+    </body>
+
+    <script>
+        Math.avg = function(a, b) { return (a + b) / 2; }
+    </script>
+
+    <script src="lib/cuon-utils.js"></script>
+    <script src="lib/cuon-matrix.js"></script>
+    <script src="lib/webgl-debug.js"></script>
+    <script src="lib/webgl-utils.js"></script>
+    
+    <script src="shader.js"></script>
+    <script src="camera.js"></script>
+    <script src="shapes.js"></script>
+    <script src="geometry.js"></script>
+    <script src="main.js"></script>
+    
+</html>
